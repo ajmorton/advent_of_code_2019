@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 mod day_1;
 mod day_2;
+mod day_3;
 
 fn main() {
-    println!("{}", day_2::run(true));
+    println!("{}", day_3::run(true));
 }
 
 
@@ -14,7 +15,13 @@ fn test_day_1() {
 }
 
 #[test]
-fn test_day_2() { 
-    assert_eq!(day_2::run(false), 4930687); 
+fn test_day_2() {
+    assert_eq!(day_2::run(false), 4930687);
     assert_eq!(day_2::run(true), 5335);
+}
+
+#[test]
+fn test_day_3() {
+    assert_eq!(day_3::run(false), 1264);
+    assert_eq!(day_3::run(true), 37390);
 }
