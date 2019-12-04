@@ -2,9 +2,10 @@
 mod day_1;
 mod day_2;
 mod day_3;
+mod day_4;
 
 fn main() {
-    println!("{}", day_3::run(true));
+    println!("{}", day_4::run(true));
 }
 
 
@@ -24,4 +25,10 @@ fn test_day_2() {
 fn test_day_3() {
     assert_eq!(day_3::run(false), 1264);
     assert_eq!(day_3::run(true), 37390);
+}
+
+#[test]
+fn test_day_4() {
+    assert_eq!(day_4::run(false), 1686);
+    assert_eq!(day_4::run(true), 1145);
 }
