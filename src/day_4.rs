@@ -6,8 +6,10 @@ pub fn run(part_two: bool) -> usize {
 
     let mut num_valid = 0;
 
-    for num in min..=max {
-        let chars: Vec<char> = num.to_string().chars().collect();
+    let mut num = min;
+
+    while num <= max {
+        let mut chars: Vec<char> = num.to_string().chars().collect();
 
         let mut contains_dupe = false;
         let mut increasing = true;
@@ -15,6 +17,12 @@ pub fn run(part_two: bool) -> usize {
         for i in 0..chars.len() - 1 {
             if chars[i] > chars[i+1] {
                 increasing = false;
+
+                // skip to next valid increasing number
+                for j in i..chars.len() {
+                    chars[j] = chars[i];
+                }
+                num = chars.iter().collect::<String>().parse::<isize>().unwrap() - 1;
                 break;
             }
 
@@ -30,6 +38,7 @@ pub fn run(part_two: bool) -> usize {
                 }
             }
         }
+        num += 1;
 
         if increasing && contains_dupe {
             num_valid += 1;
