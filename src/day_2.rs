@@ -48,5 +48,5 @@ fn run_prog(prog: &Vec<isize>, noun: isize, verb: isize) -> isize {
 
     let mut computer = int_computer::Computer::new(prog);
     computer.run();
-    return computer.get_program()[0];
+    return *computer.get_program().get(&0).unwrap();
 }

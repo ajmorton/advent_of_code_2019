@@ -1,4 +1,9 @@
-type IntProgram = Vec<isize>;
+use std::collections::HashMap;
+
+type IntValue = isize;
+type IntProgram = HashMap<usize, IntValue>;
+
+const MEM_SIZE: usize = 32000;
 
 #[derive(PartialEq)]
 enum Instruction {
@@ -10,51 +15,58 @@ enum Instruction {
     JumpIfFalse(Parameter, Parameter),
     LessThan(Parameter, Parameter, Parameter),
     Equals(Parameter, Parameter, Parameter),
+    AdjustRelBase(Parameter),
     End()
 }
 
 #[derive(PartialEq, Debug)]
 enum Parameter {
-    Immediate(isize),
-    Position(usize)
+    Immediate(IntValue),
+    Position(usize),
+    Relative(IntValue)
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Action {
     Continue,
     Read,
-    Output(isize),
+    Output(IntValue),
     Halt
 }
 
 pub struct Computer {
-    program: IntProgram,
+    memory: IntProgram,
     instr_ptr: usize,
-    input_vals: Vec<isize>,
-    output_vals: Vec<isize>
+    relative_base: IntValue,
+    input_vals: Vec<IntValue>,
+    output_vals: Vec<IntValue>
 }
 
 impl Computer {
 
-    pub fn new(program: Vec<isize>) -> Self {
+    pub fn new(program: Vec<IntValue>) -> Self {
+        // read program into memory
+        let mut memory = HashMap::new();
+        for (index, val) in program.iter().enumerate() {
+            memory.insert(index, *val);
+        };
+
         Computer {
-            program,
+            memory,
             instr_ptr: 0,
+            relative_base: 0,
             input_vals: Vec::new(),
             output_vals: Vec::new()
         }
     }
 
-    pub fn new_with_input(program: Vec<isize>, input_vals: Vec<isize>) -> Self {
-        Computer {
-            program,
-            instr_ptr: 0,
-            input_vals,
-            output_vals: Vec::new()
-        }
+    pub fn new_with_input(program: Vec<IntValue>, input_vals: Vec<IntValue>) -> Self {
+        let mut comp = Computer::new(program);
+        comp.input_vals = input_vals;
+        comp
     }
 
-    pub fn input(&mut self, val: isize) {
+    pub fn input(&mut self, val: IntValue) {
         self.input_vals.push(val);
     }
 
@@ -71,47 +83,49 @@ impl Computer {
     }
 
     fn next_instr(&self) -> Instruction {
-        let instr = self.program[self.instr_ptr];
+        let instr = self.memory.get(&self.instr_ptr).unwrap();
 
         let opcode = instr % 100;
         let mode_1 = (instr / 100) % 10;
         let mode_2 = (instr / 1000) % 10;
         let mode_3 = (instr / 10000) % 10;
 
-        let get_param = |mode, ptr, prog: Vec<isize>|
-            if mode == 1 {
-                Parameter::Immediate(prog[ptr])
-            } else {
-                Parameter::Position(prog[ptr] as usize)
+        let get_param = |mode, ptr: usize, prog: &IntProgram|
+            match mode {
+                0 => Parameter::Position(*prog.get(&ptr).unwrap_or(&0) as usize),
+                1 => Parameter::Immediate(*prog.get(&ptr).unwrap_or(&0)),
+                2 => Parameter::Relative(*prog.get(&ptr).unwrap_or(&0)),
+                _ => unimplemented!()
             };
 
         match opcode {
-            1 => Instruction::Add(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                  get_param(mode_2, self.instr_ptr + 2, self.program.clone()),
-                                  get_param(mode_3, self.instr_ptr + 3, self.program.clone())),
+            1 => Instruction::Add(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                  get_param(mode_2, self.instr_ptr + 2, &self.memory),
+                                  get_param(mode_3, self.instr_ptr + 3, &self.memory)),
 
-            2 => Instruction::Mult(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                   get_param(mode_2, self.instr_ptr + 2, self.program.clone()),
-                                   get_param(mode_3, self.instr_ptr + 3, self.program.clone())),
+            2 => Instruction::Mult(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                   get_param(mode_2, self.instr_ptr + 2, &self.memory),
+                                   get_param(mode_3, self.instr_ptr + 3, &self.memory)),
 
-            3 => Instruction::Read(get_param(mode_1, self.instr_ptr + 1, self.program.clone())),
+            3 => Instruction::Read(get_param(mode_1, self.instr_ptr + 1, &self.memory)),
 
-            4 => Instruction::Write(get_param(mode_1, self.instr_ptr + 1, self.program.clone())),
+            4 => Instruction::Write(get_param(mode_1, self.instr_ptr + 1, &self.memory)),
 
-            5 => Instruction::JumpIfTrue(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                         get_param(mode_2, self.instr_ptr + 2, self.program.clone())),
+            5 => Instruction::JumpIfTrue(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                         get_param(mode_2, self.instr_ptr + 2, &self.memory)),
 
-            6 => Instruction::JumpIfFalse(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                          get_param(mode_2, self.instr_ptr + 2, self.program.clone())),
+            6 => Instruction::JumpIfFalse(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                          get_param(mode_2, self.instr_ptr + 2, &self.memory)),
 
-            7 => Instruction::LessThan(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                       get_param(mode_2, self.instr_ptr + 2, self.program.clone()),
-                                       get_param(mode_3, self.instr_ptr + 3, self.program.clone())),
+            7 => Instruction::LessThan(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                       get_param(mode_2, self.instr_ptr + 2, &self.memory),
+                                       get_param(mode_3, self.instr_ptr + 3, &self.memory)),
 
-            8 => Instruction::Equals(get_param(mode_1, self.instr_ptr + 1, self.program.clone()),
-                                     get_param(mode_2, self.instr_ptr + 2, self.program.clone()),
-                                     get_param(mode_3, self.instr_ptr + 3, self.program.clone())),
+            8 => Instruction::Equals(get_param(mode_1, self.instr_ptr + 1, &self.memory),
+                                     get_param(mode_2, self.instr_ptr + 2, &self.memory),
+                                     get_param(mode_3, self.instr_ptr + 3, &self.memory)),
 
+            9 => Instruction::AdjustRelBase(get_param(mode_1, self.instr_ptr + 1, &self.memory)),
 
             99 => Instruction::End(),
 
@@ -184,50 +198,38 @@ impl Computer {
                 self.instr_ptr += 4;
                 Action::Continue
             },
+            Instruction::AdjustRelBase(param_1) => {
+                self.relative_base += self.read(param_1);
+                self.instr_ptr += 2;
+                Action::Continue
+            },
             Instruction::End() => Action::Halt
         }
     }
 
-    fn read(&self, param: Parameter) -> isize {
+    fn read(&self, param: Parameter) -> IntValue {
         match param {
             Parameter::Immediate(val) => val,
-            Parameter::Position(index) => self.program[index]
+            Parameter::Position(index) => *self.memory.get(&index).unwrap_or(&0),
+            Parameter::Relative(offset) => *self.memory.get(&((self.relative_base + offset) as usize)).unwrap_or(&0)
         }
     }
 
-    fn write(&mut self, param: Parameter, value: isize) {
+    fn write(&mut self, param: Parameter, value: IntValue) {
         match param {
             Parameter::Immediate(_) => unimplemented!(),
-            Parameter::Position(index) => self.program[index] = value
+            Parameter::Position(index) => self.memory.insert(index, value),
+            Parameter::Relative(offset) => self.memory.insert((self.relative_base + offset) as usize,value)
         };
     }
 
     pub fn get_program(self) -> IntProgram {
-        self.program.clone()
+        self.memory.clone()
     }
 
-    pub fn get_output_vals(self) -> Vec<isize> {
+    pub fn get_output_vals(self) -> Vec<IntValue> {
         self.output_vals.clone()
     }
-}
-
-#[test]
-fn int_computer_tests () {
-    let mut computer = Computer::new(vec!(1,9,10,3,2,3,11,0,99,30,40,50));
-    computer.run();
-    assert_eq!(computer.get_program(), vec!(3500,9,10,70,2,3,11,0,99,30,40,50));
-
-    computer = Computer::new(vec!(1,0,0,0,99));
-    computer.run();
-    assert_eq!(computer.get_program(), vec!(2,0,0,0,99));
-
-    computer = Computer::new(vec!(2,3,0,3,99));
-    computer.run();
-    assert_eq!(computer.get_program(), vec!(2,3,0,6,99));
-
-    computer = Computer::new(vec!(1,1,1,4,99,5,6,0,99));
-    computer.run();
-    assert_eq!(computer.get_program(), vec!(30,1,1,4,2,5,6,0,99));
 }
 
 #[test]
