@@ -1,4 +1,15 @@
 
+#[test]
+fn problem_1() {
+    assert_eq!(run(false), 1686);
+}
+
+#[test]
+fn problem_2() {
+    assert_eq!(run(true), 1145);
+}
+
+
 pub fn run(part_two: bool) -> usize {
 
     let min = 168630;

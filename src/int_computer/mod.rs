@@ -19,6 +19,14 @@ enum Parameter {
     Position(usize)
 }
 
+#[derive(PartialEq)]
+pub enum Action {
+    Continue,
+    Read,
+    Output(isize),
+    Halt
+}
+
 pub struct Computer {
     program: IntProgram,
     instr_ptr: usize,
@@ -28,32 +36,37 @@ pub struct Computer {
 
 impl Computer {
 
-    pub fn new(prog: Vec<isize>) -> Self {
+    pub fn new(program: Vec<isize>) -> Self {
         Computer {
-            program: prog,
+            program,
             instr_ptr: 0,
             input_vals: Vec::new(),
             output_vals: Vec::new()
         }
     }
 
-    pub fn new_with_input(prog: Vec<isize>, input_vals: Vec<isize>) -> Self {
+    pub fn new_with_input(program: Vec<isize>, input_vals: Vec<isize>) -> Self {
         Computer {
-            program: prog,
+            program,
             instr_ptr: 0,
             input_vals,
             output_vals: Vec::new()
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn input(&mut self, val: isize) {
+        self.input_vals.push(val);
+    }
+
+    pub fn run(&mut self) -> Action {
         loop {
             let instr = self.next_instr();
-            if instr == Instruction::End() {
-                return;
-            } else {
-                self.exec_instr(instr);
-            }
+            let result = self.exec_instr(instr);
+
+            match result {
+                Action::Continue => {},
+                _ => return result
+            };
         }
     }
 
@@ -106,26 +119,36 @@ impl Computer {
         }
     }
 
-    fn exec_instr(&mut self, instr: Instruction) {
+    fn exec_instr(&mut self, instr: Instruction) -> Action {
         match instr {
             Instruction::Add(param_1, param_2, param_3) => {
                 let value = self.read(param_1) + self.read(param_2);
                 self.write(param_3, value);
                 self.instr_ptr += 4;
+                Action::Continue
             },
             Instruction::Mult(param_1, param_2, param_3) => {
                 let value = self.read(param_1) * self.read(param_2);
                 self.write(param_3, value);
                 self.instr_ptr += 4;
+                Action::Continue
             },
             Instruction::Read(param_1) => {
-                let value = self.input_vals.remove(0);
-                self.write(param_1, value);
-                self.instr_ptr += 2;
+                match self.input_vals.len() {
+                    0 => Action::Read,
+                    _ => {
+                        let value = self.input_vals.remove(0);
+                        self.write(param_1, value);
+                        self.instr_ptr += 2;
+                        Action::Continue
+                    }
+                }
             },
             Instruction::Write(param_1) => {
-                self.output_vals.push(self.read(param_1));
+                let value = self.read(param_1);
+                self.output_vals.push(value);
                 self.instr_ptr += 2;
+                Action::Output(value)
             },
             Instruction::JumpIfTrue(param_1, param_2) => {
                 if self.read(param_1) != 0 {
@@ -133,6 +156,7 @@ impl Computer {
                 } else {
                     self.instr_ptr += 3;
                 };
+                Action::Continue
             },
             Instruction::JumpIfFalse(param_1, param_2) => {
                 if self.read(param_1) == 0 {
@@ -140,6 +164,7 @@ impl Computer {
                 } else {
                     self.instr_ptr += 3;
                 };
+                Action::Continue
             },
             Instruction::LessThan(param_1, param_2, param_3) => {
                 if self.read(param_1) < self.read(param_2) {
@@ -148,6 +173,7 @@ impl Computer {
                     self.write(param_3, 0);
                 }
                 self.instr_ptr += 4;
+                Action::Continue
             },
             Instruction::Equals(param_1, param_2, param_3) => {
                 if self.read(param_1) == self.read(param_2) {
@@ -156,9 +182,10 @@ impl Computer {
                     self.write(param_3, 0);
                 }
                 self.instr_ptr += 4;
+                Action::Continue
             },
-            Instruction::End() => {}
-        };
+            Instruction::End() => Action::Halt
+        }
     }
 
     fn read(&self, param: Parameter) -> isize {

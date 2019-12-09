@@ -4,6 +4,16 @@ use std::io::BufRead;
 
 use super::int_computer;
 
+#[test]
+fn problem_1() {
+    assert_eq!(run(false), 4930687);
+}
+
+#[test]
+fn problem_2() {
+    assert_eq!(run(true), 5335);
+}
+
 pub fn run(part_two: bool) -> isize {
     let file = File::open("input/2.txt").expect("Error reading file");
     let mut reader = BufReader::new(file);

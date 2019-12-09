@@ -4,6 +4,17 @@ use std::io::BufRead;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
+#[test]
+fn problem_1() {
+    assert_eq!(run(false), 1264);
+}
+
+#[test]
+fn problem_2() {
+    assert_eq!(run(true), 37390);
+}
+
+
 pub fn run(part_two: bool) -> usize {
     let file = File::open("input/3.txt").expect("Error reading file");
     let mut reader = BufReader::new(file);
