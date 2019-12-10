@@ -9,9 +9,9 @@ mod day_4;
 mod day_5;
 
 mod day_7;
-
+mod day_8;
 mod day_9;
 
 fn main() {
-    println!("{}", day_9::run(true));
+    println!("{}", day_8::run(true));
 }
