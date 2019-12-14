@@ -102,7 +102,6 @@ pub fn run(part_two: bool) -> usize {
     let map: Map = reader.lines().map(|line| line.unwrap().chars().collect::<Vec<char>>()).collect();
 
     let mut max_vis = 0;
-    let mut central_asteroid = Coord{x:0, y:0};
 
     for (y, row) in map.iter().enumerate() {
         for (x, cell) in row.iter().enumerate() {
@@ -111,7 +110,6 @@ pub fn run(part_two: bool) -> usize {
                 let vis = count_visible(&asteroid_loc, &map);
                 if vis > max_vis {
                     max_vis = vis;
-                    central_asteroid = Coord{x,y};
                 }
             }
         }

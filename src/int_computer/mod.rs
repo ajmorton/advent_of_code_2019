@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-type IntValue = isize;
+pub type IntValue = isize;
 type IntProgram = HashMap<usize, IntValue>;
 
 const MEM_SIZE: usize = 32000;
