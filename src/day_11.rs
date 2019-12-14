@@ -10,7 +10,7 @@ fn problem_1() {
 #[test]
 fn problem_2() {
     // Writes text -> GLBEPJZP
-    assert_eq!(run(false), 0);
+    assert_eq!(run(true), 0);
 }
 
 enum Direction {

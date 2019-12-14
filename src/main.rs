@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+#[macro_use] extern crate scan_fmt;
+
 mod int_computer;
 
 mod day_1;
@@ -13,7 +15,8 @@ mod day_8;
 mod day_9;
 mod day_10;
 mod day_11;
+mod day_12;
 
 fn main() {
-    println!("{}", day_11::run(true));
+    println!("{}", day_12::run(false));
 }
