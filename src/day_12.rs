@@ -70,7 +70,7 @@ impl Moon {
     }
 }
 
-pub fn run(part_two: bool) -> usize {
+pub fn run(_part_two: bool) -> usize {
     let input = fs::read_to_string("input/12.txt").expect("Failed to read file");
     let mut moons: Vec<Moon> = input.lines().map(
         |line| {

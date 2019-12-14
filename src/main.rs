@@ -16,7 +16,8 @@ mod day_9;
 mod day_10;
 mod day_11;
 mod day_12;
+mod day_13;
 
 fn main() {
-    println!("{}", day_12::run(false));
+    println!("{}", day_13::run(true));
 }

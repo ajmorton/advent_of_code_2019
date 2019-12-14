@@ -82,6 +82,22 @@ impl Computer {
         }
     }
 
+    pub fn run_for(&mut self, cycles: usize) -> Option<Vec<Action>> {
+
+        let mut output:Vec<Action> = vec!();
+
+        for _ in 0..cycles {
+            match self.run() {
+                Action::Output(x) => output.push(Action::Output(x)),
+                Action::Read => return Some(vec!(Action::Read)),
+                Action::Halt => return None,
+                _other => {println!("Unexpected result: {:?}", _other) ;return None}
+            }
+        }
+
+        Some(output)
+    }
+
     fn next_instr(&self) -> Instruction {
         let instr = self.memory.get(&self.instr_ptr).unwrap();
 
